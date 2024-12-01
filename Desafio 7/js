@@ -1,0 +1,64 @@
+import React, { useEffect, useState } from 'react';
+import './PizzaApp.css';
+
+const useTotal = () => {
+  const [total, setTotal] = useState(0);
+
+  const updateTotal = (price) => {
+    setTotal(prevTotal => prevTotal + Number(price));
+  };
+
+  return { total, updateTotal };
+};
+
+const PizzaApp = () => {
+  const [pizzas, setPizzas] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { total, updateTotal } = useTotal();
+
+  useEffect(() => {
+    const fetchPizzas = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/pizzas');
+        if (!response.ok) {
+          throw new Error('Error al obtener las pizzas');
+        }
+        const data = await response.json();
+        setPizzas(data);
+      } catch (error) {
+        setError('No se pudo cargar la información de las pizzas. Por favor, intente nuevamente más tarde.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPizzas();
+  }, []);
+
+  if (loading) {
+    return <p>Cargando pizzas...</p>;
+  }
+
+  if (error) {
+    return <p>{error}</p>; // More user-friendly error message
+  }
+
+  return (
+    <div className="pizzas-container">
+      <h2>Total: ${total}</h2>
+      {pizzas.map((pizza) => (
+        <div key={pizza.id} className="card-pizza">
+          <img src={pizza.image} alt={`Pizza ${pizza.name}`} className="pizza-image" />
+          <h3>{pizza.name}</h3>
+          <p>Precio: ${pizza.price}</p>
+          <p>Ingredientes: {pizza.ingredients.join(', ')}</p>
+          <p>{pizza.description}</p>
+          <button onClick={() => updateTotal(pizza.price)}>Añadir al carrito</button> 
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export default PizzaApp;
